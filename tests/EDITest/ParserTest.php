@@ -133,6 +133,27 @@ final class ParserTest extends \PHPUnit\Framework\TestCase
         static::assertContains($experror, $error);
     }
 
+    public function testBypassNotPrintableCharacters()
+    {
+        $invalid_chars = ['¿', '®', '¼', '½', '¾', '¶', '°', "\u{2019}"];
+        $invalid_char = $invalid_chars[array_rand($invalid_chars)];
+        $string = "NAD+CN+++YOTANKA:VICTOR TESSON+$invalid_char:VICTOR TESSON+NANTES++44000+FR'";
+        $expected = [[
+            'NAD', 'CN', '', '',
+            ['YOTANKA', 'VICTOR TESSON'],
+            [$invalid_char, 'VICTOR TESSON'],
+            'NANTES',
+            '',
+            '44000',
+            'FR'
+        ]];
+        $p = new Parser($string, true);
+        $result = $p->get();
+        $error = $p->errors();
+        static::assertSame($expected, $result);
+        static::assertEmpty($error);
+    }
+
     public function testNotEscapedSegment()
     {
         $string = "EQD+CX?DU12?+3456+2?:0'";

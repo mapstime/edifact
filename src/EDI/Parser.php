@@ -115,12 +115,19 @@ class Parser
     private $unbChecked;
 
     /**
+     * @var bool : TRUE to bypass encoding sanitization checks (default FALSE)
+     */
+    private $bypassSanitization;
+
+    /**
      * Parser constructor.
      *
      * @param string|string[]|null $url
      */
-    public function __construct($url = null)
+    public function __construct($url = null, $bypassSanitization = false)
     {
+        $this->bypassSanitization = $bypassSanitization;
+
         if ($this->unaChecked !== false) {
             $this->resetUNA();
         }
@@ -181,16 +188,18 @@ class Parser
             $line = \str_replace(["\x00", "\r", "\n"], '', $line);
 
             // Basic sanitization, remove non printable chars.
-            $lineTrim = \trim($line);
-            $line = (string) \preg_replace($this->stripChars, '', $lineTrim);
-            $line_bytes = \strlen($line);
+            if (!$this->bypassSanitization) {
+                $lineTrim = \trim($line);
+                $line = (string) \preg_replace($this->stripChars, '', $lineTrim);
+                $line_bytes = \strlen($line);
 
-            if ($line_bytes !== \strlen($lineTrim)) {
-                $this->errors[] = "There's a not printable character on line " . $i . ': ' . $lineTrim;
-            }
+                if ($line_bytes !== \strlen($lineTrim)) {
+                    $this->errors[] = "There's a not printable character on line " . $i . ': ' . $lineTrim;
+                }
 
-            if ($line_bytes < 2) {
-                continue;
+                if ($line_bytes < 2) {
+                    continue;
+                }
             }
 
             switch (\substr($line, 0, 3)) {
