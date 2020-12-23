@@ -45,7 +45,7 @@ final class InterpreterTest extends \PHPUnit\Framework\TestCase
         $svcjson = $interpreter->getJsonServiceSegments();
         $svcjsonpretty = $interpreter->getJsonServiceSegments(true);
         static::assertSame($svc, \json_decode($svcjson, true));
-        static::assertSame(26, \substr_count($svcjsonpretty, "\n"));
+        static::assertSame(28, \substr_count($svcjsonpretty, "\n"));
     }
 
     public function testBAPLIE()
@@ -87,8 +87,8 @@ final class InterpreterTest extends \PHPUnit\Framework\TestCase
             'JSON does not match expected output'
         );
 
-        static::assertSame(3152, \strlen($interpreter->getJson()));
-        static::assertSame(8379, \strlen($interpreter->getJson(true)));
+        static::assertSame(3598, \strlen($interpreter->getJson()));
+        static::assertSame(9383, \strlen($interpreter->getJson(true)));
 
         static::assertCount(2, $interpreter->getMessages());
         static::assertCount(0, $interpreter->getErrors());
@@ -157,7 +157,7 @@ final class InterpreterTest extends \PHPUnit\Framework\TestCase
 
         $arrayy = $interpreter->getArrayyServiceSegments();
         static::assertCount(
-            13,
+            14,
             $arrayy->get('interchangeHeader')
         );
     }
@@ -192,7 +192,7 @@ final class InterpreterTest extends \PHPUnit\Framework\TestCase
 
         $arrayy = $interpreter->getArrayyServiceSegments();
         static::assertCount(
-            13,
+            14,
             $arrayy->get('interchangeHeader')
         );
     }
