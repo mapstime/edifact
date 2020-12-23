@@ -552,8 +552,11 @@ Example
 
 Testing
 -------
-The package should be required with composer, alongside edifact-mapping. The tests then can be run simply with phpunit in the root of the package.
+Encoding sets
+-------------
 
-Notes
-------
-Valid characters are: A-Za-z0-9.,-()/'+:=?!"%&*;<> [UNECE](http://www.unece.org/trade/untdid/texts/d422_d.htm#p5.1)
+We sanitize the characters in an edifact file according to its encoding set. Currently we only sanitize `UNOA`, `UNOB` and `UNOC` encodings.
+
+- https://blog.sandro-pereira.com/2009/08/15/edifact-encoding-edi-character-set-support/
+- https://www.compart.com/fr/unicode/charsets/ISO_646.irv:1983
+- https://www.compart.com/fr/unicode/charsets/ISO_8859-1:1987

@@ -26,9 +26,22 @@ class Parser
     private $errors;
 
     /**
+     * @var array<string,string>
+     *
+     * https://blog.sandro-pereira.com/2009/08/15/edifact-encoding-edi-character-set-support/
+     * https://www.compart.com/fr/unicode/charsets/ISO_646.irv:1983
+     * https://www.compart.com/fr/unicode/charsets/ISO_8859-1:1987
+     */
+    private static $encodingToStripChars = [
+        'UNOA' => '/[\x{01}-\x{1F}\x{7F}-\x{FF}]/u', // not as restrictive as it should be
+        'UNOB' => '/[\x{01}-\x{1F}\x{7F}-\x{FF}]/u',
+        'UNOC' => '/[\x{01}-\x{1F}\x{7F}-\x{A0}]/u',
+    ];
+
+    /**
      * @var string
      */
-    private $stripChars = "/[\x01-\x1F\x80-\xFF]/"; // UNOB encoding set
+    private $stripChars;
 
     /**
      * @var string
@@ -96,15 +109,6 @@ class Parser
     private $messageDirectory;
 
     /**
-     * @var array<string,string>
-     */
-    private static $encodingToStripChars = [
-        'UNOA' => "/[\x01-\x1F\x80-\xFF]/", // not as restrictive as it should be
-        'UNOB' => "/[\x01-\x1F\x80-\xFF]/",
-        'UNOC' => "/[\x01-\x1F\x7F-\x9F]/",
-    ];
-
-    /**
      * @var bool : TRUE when UNA's characters are known, FALSE when they are not. NULL means no initialization
      */
     private $unaChecked;
@@ -127,6 +131,7 @@ class Parser
     public function __construct($url = null, $bypassSanitization = false)
     {
         $this->bypassSanitization = $bypassSanitization;
+        $this->stripChars = self::$encodingToStripChars['UNOA'];
 
         if ($this->unaChecked !== false) {
             $this->resetUNA();
