@@ -26,9 +26,22 @@ class Parser
     private $errors;
 
     /**
+     * @var array<string,string>
+     *
+     * https://blog.sandro-pereira.com/2009/08/15/edifact-encoding-edi-character-set-support/
+     * https://www.compart.com/fr/unicode/charsets/ISO_646.irv:1983
+     * https://www.compart.com/fr/unicode/charsets/ISO_8859-1:1987
+     */
+    private static $encodingToStripChars = [
+        'UNOA' => '/[\x{01}-\x{1F}\x{7F}-\x{FF}]/u', // not as restrictive as it should be
+        'UNOB' => '/[\x{01}-\x{1F}\x{7F}-\x{FF}]/u',
+        'UNOC' => '/[\x{01}-\x{1F}\x{7F}-\x{A0}]/u',
+    ];
+
+    /**
      * @var string
      */
-    private $stripChars = "/[\x01-\x1F\x80-\xFF]/"; // UNOB encoding set
+    private $stripChars;
 
     /**
      * @var string
@@ -96,15 +109,6 @@ class Parser
     private $messageDirectory;
 
     /**
-     * @var array<string,string>
-     */
-    private static $encodingToStripChars = [
-        'UNOA' => "/[\x01-\x1F\x80-\xFF]/", // not as restrictive as it should be
-        'UNOB' => "/[\x01-\x1F\x80-\xFF]/",
-        'UNOC' => "/[\x01-\x1F\x7F-\x9F]/",
-    ];
-
-    /**
      * @var bool : TRUE when UNA's characters are known, FALSE when they are not. NULL means no initialization
      */
     private $unaChecked;
@@ -127,6 +131,7 @@ class Parser
     public function __construct($url = null, $bypassSanitization = false)
     {
         $this->bypassSanitization = $bypassSanitization;
+        $this->stripChars = self::$encodingToStripChars['UNOA'];
 
         if ($this->unaChecked !== false) {
             $this->resetUNA();
@@ -190,22 +195,21 @@ class Parser
             // Basic sanitization, remove non printable chars.
             if (!$this->bypassSanitization) {
                 $lineTrim = \trim($line);
-                $line = (string) \preg_replace($this->stripChars, '', $lineTrim);
-                $line_bytes = \strlen($line);
-
-                if ($line_bytes !== \strlen($lineTrim)) {
-                    $this->errors[] = "There's a not printable character on line " . $i . ': ' . $lineTrim;
+                $fixedLine = (string) \preg_replace($this->stripChars, '', $lineTrim);
+                if (\mb_strlen($fixedLine) !== \mb_strlen($lineTrim)) {
+                    $this->errors[] = "There's a non printable character on line " . $i . ': ' . $lineTrim;
                 }
-
-                if ($line_bytes < 2) {
-                    continue;
-                }
+                $line = $fixedLine;
             }
 
-            switch (\substr($line, 0, 3)) {
+            if (\mb_strlen($line) < 2) {
+                continue;
+            }
+
+            switch (\mb_substr($line, 0, 3)) {
                 case 'UNA':
                     if (!$this->unaChecked) {
-                        $this->analyseUNA(\substr($line, 4, 6));
+                        $this->analyseUNA(\mb_substr($line, 4, 6));
                     }
 
                     break;
@@ -243,7 +247,7 @@ class Parser
      */
     public function analyseUNA(string $line)
     {
-        $line = \substr($line, 0, 6);
+        $line = \mb_substr($line, 0, 6);
         if (isset($line[0])) {
             $this->sepComp = \preg_quote($line[0], self::$DELIMITER);
             $this->sepUnescapedComp = $line[0];
@@ -449,10 +453,10 @@ class Parser
         if (
             !$this->unaChecked
             &&
-            \strpos($string, 'UNA') === 0
+            \mb_strpos($string, 'UNA') === 0
         ) {
             $this->analyseUNA(
-                \substr(\substr($string, 3), 0, 9)
+                \mb_substr(\mb_substr($string, 3), 0, 9)
             );
         }
 
@@ -465,7 +469,7 @@ class Parser
                 (string) \preg_replace(
                     "#^UNB\+#",
                     '',
-                    \substr($string, 0, 8)
+                    \mb_substr($string, 0, 8)
                 )
             );
         }
@@ -548,7 +552,7 @@ class Parser
             if (
                 $this->symbEnd
                 &&
-                \strpos($value, $this->symbEnd) !== false
+                \mb_strpos($value, $this->symbEnd) !== false
             ) {
                 if (\preg_match(self::$DELIMITER . '(?<!' . $this->symbRel . ')' . $this->symbEnd . self::$DELIMITER, $value)) {
                     $this->errors[] = "There's a " . \stripslashes($this->symbEnd) . ' not escaped in the data; string ' . $str;
@@ -558,7 +562,7 @@ class Parser
             if (
                 $this->symbUnescapedRel
                 &&
-                \strpos($value, $this->symbUnescapedRel) !== false
+                \mb_strpos($value, $this->symbUnescapedRel) !== false
             ) {
                 if (\preg_match(self::$DELIMITER . '(?<!' . $this->symbRel . ')' . $this->symbRel . '(?!' . $this->symbRel . ')(?!' . $this->sepData . ')(?!' . $this->sepComp . ')(?!' . $this->symbEnd . ')' . self::$DELIMITER, $value)) {
                     $this->errors[] = "There's a character not escaped with " . \stripslashes($this->symbRel ?? '') . ' in the data; string ' . $value;
@@ -586,7 +590,7 @@ class Parser
         }
 
         $replace = function (&$string) {
-            if ($this->symbUnescapedRel && \strpos($string, $this->symbUnescapedRel) !== false) {
+            if ($this->symbUnescapedRel && \mb_strpos($string, $this->symbUnescapedRel) !== false) {
                 $string = \preg_replace(
                     self::$DELIMITER . $this->symbRel . '(?=' . $this->symbRel . ')|' . $this->symbRel . '(?=' . $this->sepData . ')|' . $this->symbRel . '(?=' . $this->sepComp . ')|' . $this->symbRel . '(?=' . $this->symbEnd . ')' . self::$DELIMITER,
                     '',
@@ -602,7 +606,7 @@ class Parser
         };
 
         // check for "sepUnescapedComp" in the string
-        if ($this->sepUnescapedComp && \strpos($str, $this->sepUnescapedComp) === false) {
+        if ($this->sepUnescapedComp && \mb_strpos($str, $this->sepUnescapedComp) === false) {
             return $replace($str);
         }
 

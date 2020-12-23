@@ -83,7 +83,7 @@ class Interpreter
      * @var array
      */
     private $codes;
- 
+
     /**
      * @var callable
      */
@@ -496,6 +496,10 @@ class Interpreter
                 }
             }
 
+            // BUG
+            // There's currently a bug where the currentGroup is not resetted when going
+            // back on top of the tree. For example, take a look at line 230 of
+            // `tests/files/D96ADESADV.json`: the currentGroup should be empty.
             $this->currentGroup = $elm['id']->__toString();
 
             foreach ($elm->children() as $elm2) {

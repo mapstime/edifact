@@ -123,35 +123,31 @@ final class ParserTest extends \PHPUnit\Framework\TestCase
 
     public function testNotPrintableCharacter()
     {
-        $string = "EQD+CèèèXDU12?+3456+2?:0'";
+        $invalid_chars = [
+            mb_chr(rand(0x01, 0x1F)),
+            mb_chr(rand(0x7F, 0xFF))
+        ];
+        $invalid_char = $invalid_chars[array_rand($invalid_chars)];
+        $string = "EQD+C${invalid_char}XDU12?+3456+2?:0'";
         $expected = [['EQD', 'CXDU12+3456', '2:0']];
         $p = new Parser($string);
-        $result = $p->get();
-        $experror = "There's a not printable character on line 1: EQD+CèèèXDU12?+3456+2?:0'";
-        $error = $p->errors();
-        static::assertSame($expected, $result);
-        static::assertContains($experror, $error);
+        $experror = "There's a non printable character on line 1: EQD+C${invalid_char}XDU12?+3456+2?:0'";
+        static::assertSame($expected, $p->get());
+        static::assertContains($experror, $p->errors());
     }
 
     public function testBypassNotPrintableCharacters()
     {
-        $invalid_chars = ['¿', '®', '¼', '½', '¾', '¶', '°', "\u{2019}"];
+        $invalid_chars = [
+            mb_chr(rand(0x01, 0x1F)),
+            mb_chr(rand(0x7F, 0xFF))
+        ];
         $invalid_char = $invalid_chars[array_rand($invalid_chars)];
-        $string = "NAD+CN+++YOTANKA:VICTOR TESSON+$invalid_char:VICTOR TESSON+NANTES++44000+FR'";
-        $expected = [[
-            'NAD', 'CN', '', '',
-            ['YOTANKA', 'VICTOR TESSON'],
-            [$invalid_char, 'VICTOR TESSON'],
-            'NANTES',
-            '',
-            '44000',
-            'FR'
-        ]];
+        $string = "EQD+C${invalid_char}XDU12?+3456+2?:0'";
+        $expected = [['EQD', "C${invalid_char}XDU12+3456", '2:0']];
         $p = new Parser($string, true);
-        $result = $p->get();
-        $error = $p->errors();
-        static::assertSame($expected, $result);
-        static::assertEmpty($error);
+        static::assertSame($expected, $p->get());
+        static::assertEmpty($p->errors());
     }
 
     public function testNotEscapedSegment()

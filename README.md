@@ -1,23 +1,29 @@
-edifact
+Edifact
 =======
 
-Tools to process EDI messages in UN/EDIFACT format
+Tools to process EDI messages in UN/EDIFACT format.
 
-Supported syntax is version 3.
+Current supported syntax is version 3.
 
 It's provided in a Composer package:
 
-`composer require sabas/edifact`
+```
+composer require sabas/edifact
+```
 
 The mapping xml files are provided in a separate package:
 
-`composer require php-edifact/edifact-mapping`
+```
+composer require php-edifact/edifact-mapping
+```
 
 EDI\Parser
-------------------
-Given an edi message checks the syntax, outputs errors and returns the message as a multidimensional array.
+----------
+
+Given an EDI message checks the syntax, outputs errors and returns the message as a multidimensional array.
 
 **INPUT**
+
 ```php
 $c = new Parser($x);
 ```
@@ -40,20 +46,23 @@ Errors
 ```php
 $c->errors();
 ```
+
 Array
 ```php
 $c->get();
 ```
 
-
 EDI\Encoder
-------------------
+-----------
+
 Given a multidimensional array (formatted as the output of the parser), returns an EDI string, optionally one segment per line.
 
 **INPUT**
+
 ```php
 $c = new Encoder($x, $wrap = true);
 ```
+
 `$x` is a multidimensional array where first dimension is the EDI segment, second contains elements:
 * single value
 * array (representing composite elements)
@@ -61,37 +70,40 @@ $c = new Encoder($x, $wrap = true);
 `$wrap` is a boolean, if you need a segment per line. Set to false to disable wrapping
 
 OR
+
 ```php
 $c = new Encoder();
 $c->encode($array, $wrap);
 ```
 
 **OUTPUT**
+
 ```php
 $c->get(); // returns String
 ```
 
 EDI\Analyser
-------------------
+------------
+
 Create from EDI file readable structured text with comments from `segments.xml`.
 Requires the EDI\Mapping package.
 
 ```php
-        $parser = new Parser($file);
-        $parsed = $parser->get();
-        $segments = $parser->getRawSegments();
-        $analyser = new Analyser();
-        $mapping = new MappingProvider('D95B');
-        $analyser->loadSegmentsXml($mapping->getSegments());
-        $analyser->loadMessageXml($mapping->getMessage('coparn'));
-        $analyser->loadCodesXml($mapping->getCodes());
-        $analyser->directory = 'D95B';
-        $result = $analyser->process($parsed, $segments);                   
-
+$parser = new Parser($file);
+$parsed = $parser->get();
+$segments = $parser->getRawSegments();
+$analyser = new Analyser();
+$mapping = new MappingProvider('D95B');
+$analyser->loadSegmentsXml($mapping->getSegments());
+$analyser->loadMessageXml($mapping->getMessage('coparn'));
+$analyser->loadCodesXml($mapping->getCodes());
+$analyser->directory = 'D95B';
+$result = $analyser->process($parsed, $segments);
 ```
-* `$file` is the path to orginal EDI message file
 
-*** Example INPUT 
+* `$file` is the path to original EDI message file
+
+*** Example INPUT
 ```text
 UNA:+,? '
 UNB+UNOA:1+MAEU+LVRIXBCT+200813:0816+1412605'
@@ -110,9 +122,10 @@ UNT+12+141260500001'
 UNZ+1+1412605'
 ```
 
-*** Example Output 
-```text
+*** Example Output
 
+<details><summary>CLICK ME</summary>
+```text
 UNA:+,? '
 UNB - InterchangeHeader
   (To start, identify and specify an interchange)
@@ -142,50 +155,50 @@ UNB - InterchangeHeader
       Date Time of preparation
     [0] 200813
         id: unb41 - date
-        
+
         type: n
         required: true
         length: 6
     [1] 0816
         id: unb42 - time
-        
+
         type: n
         required: true
         length: 4
   [4] 1412605
       unb5 - interchangeControlReference
-      
+
 
 UNB+UNOA:1+MAEU+LVRIXBCT+200813:0816+1412605'
 UNH - messageHeader http://www.unece.org/trade/untdid/d95b/trsd/trsdunh.htm
   (To head, identify and specify a message.)
   [0] 141260500001
       unh1 - messageReferenceNumber
-      
+
   [1] COPARN,D,95B,UN
       unh2 - messageType
-      
+
     [0] COPARN
         id: unh21 - messageType
-        
+
         type: an
         maxlen: 6
         required: true
     [1] D
         id: unh22 - messageVersion
-        
+
         type: an
         maxlen: 3
         required: true
     [2] 95B
         id: unh23 - messageRelease
-        
+
         type: an
         maxlen: 3
         required: true
     [3] UN
         id: unh24 - controllingAgency
-        
+
         type: an
         maxlen: 3
         required: true
@@ -265,7 +278,7 @@ EQD - equipmentDetails http://www.unece.org/trade/untdid/d95b/trsd/trsdeqd.htm
   [0] CN
       8053 - equipmentQualifier
       Code identifying type of equipment.
-  [1] 
+  [1]
       C237 - equipmentIdentification
       Marks (letters and/or numbers) identifying equipment used for transport
       such as a container.
@@ -342,10 +355,10 @@ RFF - reference http://www.unece.org/trade/untdid/d95b/trsd/trsdrff.htm
 RFF+SQ:7G3JTL39O0M3B'
 TMD - transportMovementDetails http://www.unece.org/trade/untdid/d95b/trsd/trsdtmd.htm
   (To specify transport movement details for a goods item or equipment.)
-  [0] 
+  [0]
       C219 - movementType
       Description of type of service for movement of cargo.
-  [1] 
+  [1]
       8332 - equipmentPlan
       Description indicating equipment plan, e.g. FCL or LCL.
   [2] 2
@@ -464,14 +477,17 @@ UNZ - InterchangeTrailer http://www.unece.org/trade/untdid/d95b/trsd/trsdunz.htm
       9903 - interchangeControlRef
       interchangeControlRef
 ```
+</details>
 
 EDI\Reader
-------------------
+----------
+
 Read from EDI file requested segment element values.
 
 **INPUT**
+
 ```php
-$r = new Reader($x);
+$r = new EDI\Reader($x);
 $sender = $r->readEdiDataValue('UNB', 2);
 $Dt = $r->readUNBDateTimeOfPreperation();
 
@@ -484,19 +500,20 @@ Where X could be:
 OR
 
 ```php
-$c = new Parser($x);
-
-$r = new Reader();
+$c = new EDI\Parser($x);
+$r = new EDI\Reader();
 $r->setParsedFile($c->get());
 $sender = $r->readEdiDataValue('UNB', 2);
 $Dt = $r->readUNBDateTimeOfPreperation();
 ```
 
 **OUTPUT**
+
 Errors
 ```php
 $c->errors();
 ```
+
 Array
 ```php
 $c->get();
@@ -504,9 +521,11 @@ $c->get();
 
 EDI\Interpreter
 ---------------
+
 Organizes the data parsed by EDI/Parser using the xml description of the message and the xml segments.
 
 **INPUT**
+
 ```php
 $p = new EDI\Parser($edifile);
 $edi = $p->get();
@@ -546,14 +565,25 @@ Example
 `DTM+7:201309200717:203'`
 
 **Array**
+
 ```php
 ['DTM',['7','201309200717','203']]
 ```
 
 Testing
 -------
-The package should be required with composer, alongside edifact-mapping. The tests then can be run simply with phpunit in the root of the package.
 
-Notes
-------
-Valid characters are: A-Za-z0-9.,-()/'+:=?!"%&*;<> [UNECE](http://www.unece.org/trade/untdid/texts/d422_d.htm#p5.1)
+The package should be required with composer, alongside `edifact-mapping`. The tests then can be run simply with phpunit in the root of the package with:
+
+```
+composer exec phpunit
+```
+
+Encoding sets
+-------------
+
+We sanitize the characters in an edifact file according to its encoding set. Currently we only sanitize `UNOA`, `UNOB` and `UNOC` encodings.
+
+- https://blog.sandro-pereira.com/2009/08/15/edifact-encoding-edi-character-set-support/
+- https://www.compart.com/fr/unicode/charsets/ISO_646.irv:1983
+- https://www.compart.com/fr/unicode/charsets/ISO_8859-1:1987
